@@ -22,11 +22,11 @@ class User {
 
     @NotBlank(message = "email Cannot be Blank")
     @Column(unique=true)
-    @Email(regexp = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$")
+    @Email(regexp = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$", message = "email Format Invalid")
     var email: String = ""
 
     @NotBlank(message = "password Cannot be Blank")
-    @Size(min = 8)
+    @Size(min = 8, message = "password Invalid")
     @Column(length = 60)
     var password: String = ""
 
