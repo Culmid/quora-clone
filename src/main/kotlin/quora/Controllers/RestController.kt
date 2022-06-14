@@ -1,5 +1,8 @@
 package quora.Controllers
 
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jws
+import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
@@ -42,23 +45,9 @@ class RestController {
 
     @PostMapping("/auth/register")
     fun registerUser(@Valid @RequestBody user: User): ResponseEntity<User?> {
-        val secretKey = env?.getProperty("secret-key") ?: "12345789"
-        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
         val response = userService?.registerUser(user)
-
-        val jws = Jwts.builder()
-            .setIssuer("quora")
-            .setSubject("${response?.id}")
-            .claim("firstName", response?.firstName ?: "No First Name")
-            .claim("lastName", response?.lastName ?: "No Last Name")
-            .claim("email", response?.email ?: "")
-            .setIssuedAt(Date.from(Instant.now())) // Current Time
-            .setExpiration(Date.from(Instant.now().plusSeconds(86400L))) // One Day Later
-            .signWith(key)
-            .compact()
-
         return ResponseEntity.created(URI("URI_PLACEHOLDER"))
-                             .header("JWT-TOKEN", jws)
+                             .header("Jwt-Token", generateJWT(response?.id ?: -1))
                              .body(response)
     }
 
@@ -67,25 +56,52 @@ class RestController {
         val user = userService?.isUserValid(loginDetails)
 
         if (user != null) {
-            val secretKey = env?.getProperty("secret-key") ?: "12345789"
-            val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
-            val jws = Jwts.builder()
-                .setIssuer("quora")
-                .setSubject("${user.id}")
-                .claim("firstName", user.firstName ?: "No First Name")
-                .claim("lastName", user.lastName ?: "No Last Name")
-                .claim("email", user.email ?: "")
-                .setIssuedAt(Date.from(Instant.now())) // Current Time
-                .setExpiration(Date.from(Instant.now().plusSeconds(86400L))) // One Day Later
-                .signWith(key)
-                .compact()
-
             return ResponseEntity
-                .ok()
-                .header("JWT-TOKEN", jws)
-                .body(Message(true, "User Logged In"))
+                   .ok()
+                   .header("Jwt-Token", generateJWT(user.id))
+                   .body(Message(true, "User Logged In"))
         }
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Message(false, "Login Unsuccessful"))
+    }
+
+    @RequestMapping("/auth/password")
+    fun passwordChange(@RequestHeader("authorization") auth: String): String {
+        val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
+
+        var jws: Jws<Claims>;
+        val secretKey = env?.getProperty("secret-key") ?: "12345789"
+        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
+
+        try {
+            jws = Jwts.parserBuilder()  // (1)
+                      .setSigningKey(key)         // (2)
+                      .build()                    // (3)
+                      .parseClaimsJws(bearerToken); // (4)
+
+            println(jws.body.subject)
+            println(jws.body.id)
+            // we can safely trust the JWT
+
+        } catch (e: JwtException) {       // (5)
+                return "fook"
+                // we *cannot* use the JWT as intended by its creator
+        }
+
+        return auth
+    }
+
+    private fun generateJWT(id: Int): String {
+        val secretKey = env?.getProperty("secret-key") ?: "12345789"
+        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
+
+        return Jwts.builder()
+                   .setIssuer("quora")
+                   .setSubject("userAuth")
+                   .setId("$id")
+                   .setIssuedAt(Date.from(Instant.now())) // Current Time
+                   .setExpiration(Date.from(Instant.now().plusSeconds(86400L))) // One Day Later
+                   .signWith(key)
+                   .compact()
     }
 }
