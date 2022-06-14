@@ -9,11 +9,13 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.PropertySource
 import org.springframework.core.env.Environment
+import org.springframework.core.env.get
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
 import quora.DTOs.LoginDetailsDTO
+import quora.DTOs.PasswordChangeDTO
 import quora.Messaging.Message
 import quora.Entities.User
 import quora.Services.UserService
@@ -66,41 +68,39 @@ class RestController {
     }
 
     @RequestMapping("/auth/password")
-    fun passwordChange(@RequestHeader("authorization") auth: String): String {
+    fun passwordChange(@RequestHeader("authorization") auth: String, @RequestBody passwordRequest: PasswordChangeDTO): ResponseEntity<Message> {
         val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
-
-        var jws: Jws<Claims>;
         val secretKey = env?.getProperty("secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
 
-        try {
-            jws = Jwts.parserBuilder()  // (1)
-                      .setSigningKey(key)         // (2)
-                      .build()                    // (3)
-                      .parseClaimsJws(bearerToken); // (4)
+        return try {
+            val jws: Jws<Claims> = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(bearerToken);
+            var response = userService?.updatePassword(jws.body.id.toInt(), passwordRequest) ?: false
 
-            println(jws.body.subject)
-            println(jws.body.id)
-            // we can safely trust the JWT
-
-        } catch (e: JwtException) {       // (5)
-                return "fook"
-                // we *cannot* use the JWT as intended by its creator
+            if (response) {
+                ResponseEntity.ok().body(Message(true, "Password Updated"))
+            } else {
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Provided User Credentials Incorrect"))
+            }
+        } catch (e: JwtException) {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid"))
         }
-
-        return auth
     }
 
     private fun generateJWT(id: Int): String {
         val secretKey = env?.getProperty("secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
 
+        println(Date.from(Instant.now().plusSeconds(env?.get("expire-period")?.toLong() ?: 86400L)))
         return Jwts.builder()
                    .setIssuer("quora")
                    .setSubject("userAuth")
                    .setId("$id")
                    .setIssuedAt(Date.from(Instant.now())) // Current Time
-                   .setExpiration(Date.from(Instant.now().plusSeconds(86400L))) // One Day Later
+                   .setExpiration(Date.from(Instant.now().plusSeconds(env?.get("expire-period")?.toLong() ?: 86400L))) // One Day Later
                    .signWith(key)
                    .compact()
     }
