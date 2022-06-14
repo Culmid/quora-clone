@@ -1,4 +1,4 @@
-package quora
+package quora.Entities
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import javax.persistence.*
