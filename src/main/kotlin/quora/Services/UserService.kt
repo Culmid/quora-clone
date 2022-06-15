@@ -35,9 +35,13 @@ class UserService {
         val potentialUser = userRepository?.findById(userId)?.get()
 
         return if (potentialUser != null && BCryptPasswordEncoder().matches(passwordRequest.currentPassword, potentialUser.password)) {
-                    potentialUser.password = passwordRequest.newPassword
-                    userRepository?.save(potentialUser)
-                    true
+                    try {
+                        potentialUser.password = passwordRequest.newPassword
+                        userRepository?.save(potentialUser)
+                        true
+                    } catch (e: Exception) { // Bit of a Foot Gun :)
+                        false
+                    }
                 } else {
                     false
                 }

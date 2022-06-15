@@ -31,6 +31,7 @@ class User {
     var password: String = ""
 
     @PrePersist
+    @PreUpdate
     fun prePersist() {
         password = BCryptPasswordEncoder().encode(password)
     }

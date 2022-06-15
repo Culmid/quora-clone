@@ -82,7 +82,15 @@ class RestController {
     }
 
     @RequestMapping("/auth/password")
-    fun passwordChange(@RequestHeader("authorization") auth: String, @RequestBody passwordRequest: PasswordChangeDTO): ResponseEntity<Message> {
+    fun passwordChange(@RequestHeader("authorization", required = false) auth: String?, @Valid @RequestBody passwordRequest: PasswordChangeDTO, bindingResult: BindingResult): ResponseEntity<Message> {
+        if (auth == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
+        }
+
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "CurrentPassword and NewPassword Fields Required"))
+        }
+
         val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
         val secretKey = env?.getProperty("secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
@@ -92,15 +100,15 @@ class RestController {
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(bearerToken);
-            var response = userService?.updatePassword(jws.body.id.toInt(), passwordRequest) ?: false
+            val response = userService?.updatePassword(jws.body.id.toInt(), passwordRequest) ?: false
 
             if (response) {
-                ResponseEntity.ok().body(Message(true, "Password Updated"))
+                ResponseEntity.status(HttpStatus.OK).body(Message(true, "Password Updated"))
             } else {
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Provided User Credentials Incorrect"))
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Provided User Credentials/Requested Password - Invalid"))
             }
         } catch (e: JwtException) {
-            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid"))
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
         }
     }
 
@@ -108,7 +116,6 @@ class RestController {
         val secretKey = env?.getProperty("secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
 
-        println(Date.from(Instant.now().plusSeconds(env?.get("expire-period")?.toLong() ?: 86400L)))
         return Jwts.builder()
                    .setIssuer("quora")
                    .setSubject("userAuth")

@@ -1,3 +1,5 @@
 package quora.DTOs
 
-data class PasswordChangeDTO(val currentPassword: String, val newPassword: String)
+import javax.validation.constraints.NotBlank
+
+data class PasswordChangeDTO(@field:NotBlank val currentPassword: String ="", @field:NotBlank val newPassword: String ="")
