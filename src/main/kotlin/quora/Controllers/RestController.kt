@@ -8,10 +8,12 @@ import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.PropertySource
+import org.springframework.context.support.DefaultMessageSourceResolvable
 import org.springframework.core.env.Environment
 import org.springframework.core.env.get
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
 import quora.DTOs.LoginDetailsDTO
@@ -22,7 +24,9 @@ import quora.Services.UserService
 import java.net.URI
 import java.time.Instant
 import java.util.*
+import javax.validation.ConstraintViolationException
 import javax.validation.Valid
+import kotlin.collections.LinkedHashMap
 
 
 @RestController
@@ -42,15 +46,26 @@ class RestController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun indexPost(): Message {
-        return Message(true, "POST Message", "Data")
+        return Message(true, "POST Message", mapOf("Data" to "Stuff"))
     }
 
     @PostMapping("/auth/register")
-    fun registerUser(@Valid @RequestBody user: User): ResponseEntity<User?> {
+    fun registerUser(@Valid @RequestBody user: User, bindingResult: BindingResult): ResponseEntity<Message> {
+        val emailExists = userService?.emailExists(user.email) ?: false
+        if (bindingResult.hasErrors() || emailExists) {
+            val errorMap = mutableMapOf<String, String>()
+            for (error in bindingResult.allErrors) {
+                errorMap[(error.arguments?.get(0) as DefaultMessageSourceResolvable).code.toString()] = error.defaultMessage.toString()
+            }
+            if (emailExists) {
+                errorMap["email"] = "Already in Use"
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Error(s) Found in User Registration", errorMap.toSortedMap()));
+        }
+
         val response = userService?.registerUser(user)
         return ResponseEntity.created(URI("URI_PLACEHOLDER"))
-                             .header("Jwt-Token", generateJWT(response?.id ?: -1))
-                             .body(response)
+            .body(Message(true, "User Registered", mapOf("Jwt-Token" to generateJWT(response?.id ?: -1))))
     }
 
     @PostMapping("/auth/login")

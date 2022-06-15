@@ -14,19 +14,19 @@ class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Int = 0
 
-    @NotBlank(message = "firstName Cannot be Blank")
+    @NotBlank(message = "Missing - Field Required")
     var firstName: String = ""
 
-    @NotBlank(message = "lastName Cannot be Blank")
+    @NotBlank(message = "Missing - Field Required")
     var lastName: String = ""
 
-    @NotBlank(message = "email Cannot be Blank")
+    @NotBlank(message = "Missing - Field Required")
     @Column(unique=true)
-    @Email(regexp = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$", message = "email Format Invalid")
+    @Email(regexp = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$", message = "Format Invalid - Please enter valid email")
     var email: String = ""
 
-    @NotBlank(message = "password Cannot be Blank")
-    @Size(min = 8, message = "password Invalid")
+    @NotBlank(message = "Missing - Field Required")
+    @Size(min = 8, message = "Invalid - Length must be > 8")
     @Column(length = 60)
     var password: String = ""
 

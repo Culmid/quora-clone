@@ -14,6 +14,10 @@ class UserService {
     @Autowired
     private var userRepository: UserRepository? = null
 
+    fun emailExists(email: String): Boolean {
+        return userRepository?.findByEmail(email) != null
+    }
+
     fun registerUser(user: User): User? {
         return userRepository?.save(user)
     }
