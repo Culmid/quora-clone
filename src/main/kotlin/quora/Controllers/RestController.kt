@@ -81,7 +81,7 @@ class RestController {
         }
     }
 
-    @RequestMapping("/auth/password")
+    @PostMapping("/auth/password")
     fun passwordChange(@RequestHeader("authorization", required = false) auth: String?, @Valid @RequestBody passwordRequest: PasswordChangeDTO, bindingResult: BindingResult): ResponseEntity<Message> {
         if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
@@ -110,6 +110,17 @@ class RestController {
         } catch (e: JwtException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
         }
+    }
+
+    @PostMapping("/auth/password-reset")
+    fun forgotPassword(@RequestBody body: Map<String, String>): ResponseEntity<Message> {
+        if (!body.containsKey("email") || body["email"] == "") {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Email Required"))
+        }
+
+        userService?.constructAndSendPasswordRecovery(env?.get("spring.mail.username") ?: "example@gmail.com", body["email"] ?: "")
+
+        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "5 Digit Email will be sent to: "))
     }
 
     private fun generateJWT(id: Int): String {
