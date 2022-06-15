@@ -21,12 +21,9 @@ import quora.DTOs.PasswordChangeDTO
 import quora.Messaging.Message
 import quora.Entities.User
 import quora.Services.UserService
-import java.net.URI
 import java.time.Instant
 import java.util.*
-import javax.validation.ConstraintViolationException
 import javax.validation.Valid
-import kotlin.collections.LinkedHashMap
 
 
 @RestController
@@ -64,22 +61,24 @@ class RestController {
         }
 
         val response = userService?.registerUser(user)
-        return ResponseEntity.created(URI("URI_PLACEHOLDER"))
+        return ResponseEntity.status(HttpStatus.CREATED)
             .body(Message(true, "User Registered", mapOf("Jwt-Token" to generateJWT(response?.id ?: -1))))
     }
 
     @PostMapping("/auth/login")
-    fun loginUser(@RequestBody loginDetails: LoginDetailsDTO): ResponseEntity<Message> {
-        val user = userService?.isUserValid(loginDetails)
-
-        if (user != null) {
-            return ResponseEntity
-                   .ok()
-                   .header("Jwt-Token", generateJWT(user.id))
-                   .body(Message(true, "User Logged In"))
+    fun loginUser(@Valid @RequestBody loginDetails: LoginDetailsDTO, bindingResult: BindingResult): ResponseEntity<Message> {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Email and Password Fields Required"))
         }
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Message(false, "Login Unsuccessful"))
+        val user = userService?.isUserValid(loginDetails)
+        return if (user == null) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Email/Password Invalid"))
+        } else {
+            ResponseEntity
+            .status(HttpStatus.OK)
+            .body(Message(true, "User Logged In", mapOf("Jwt-Token" to generateJWT(user.id))))
+        }
     }
 
     @RequestMapping("/auth/password")
