@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service
 import quora.DTOs.LoginDetailsDTO
 import quora.DTOs.PasswordChangeDTO
 import quora.Entities.User
+import quora.Entities.RedisEntity
+import quora.Repositories.RedisRepo
 import quora.Repositories.UserRepository
 import java.util.concurrent.ThreadLocalRandom
 
@@ -20,6 +22,9 @@ class UserService {
 
     @Autowired
     private var mailSender: JavaMailSender? = null
+
+    @Autowired
+    private var redisRepo: RedisRepo? = null
 
     fun emailExists(email: String): Boolean {
         return userRepository?.findByEmail(email) != null
@@ -55,7 +60,9 @@ class UserService {
     }
 
     fun constructAndSendPasswordRecovery(fromEmail: String, toEmail: String) {
-        if (emailExists(toEmail)) {
+        val potentialUser = userRepository?.findByEmail(toEmail)
+
+        if (potentialUser != null) {
             val randomNum: Int = ThreadLocalRandom.current().nextInt(10000, 99999 + 1)
 
             val message = SimpleMailMessage()
@@ -66,6 +73,7 @@ class UserService {
 
             try {
                 mailSender?.send(message)
+                redisRepo?.save(RedisEntity("password-reset-token-${potentialUser.id}", randomNum.toString()))
             } catch (e: MailException) {
                 System.err.println(e)
             }

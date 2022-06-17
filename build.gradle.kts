@@ -17,6 +17,7 @@ repositories {
 }
 
 dependencies {
+	implementation("redis.clients:jedis")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.springframework.boot:spring-boot-starter-security")

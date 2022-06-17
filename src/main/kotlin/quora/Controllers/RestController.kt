@@ -118,9 +118,10 @@ class RestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Email Required"))
         }
 
-        userService?.constructAndSendPasswordRecovery(env?.get("spring.mail.username") ?: "example@gmail.com", body["email"] ?: "")
+        val toEmail = body["email"] ?: ""
+        userService?.constructAndSendPasswordRecovery(env?.get("spring.mail.username") ?: "example@gmail.com", toEmail)
 
-        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "5 Digit Email will be sent to: "))
+        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "5 Digit Email will be sent to: $toEmail"))
     }
 
     private fun generateJWT(id: Int): String {
