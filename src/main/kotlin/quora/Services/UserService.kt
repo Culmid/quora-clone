@@ -1,6 +1,7 @@
 package quora.Services
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.mail.MailException
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -54,14 +55,20 @@ class UserService {
     }
 
     fun constructAndSendPasswordRecovery(fromEmail: String, toEmail: String) {
-        val randomNum: Int = ThreadLocalRandom.current().nextInt(10000, 99999 + 1)
+        if (emailExists(toEmail)) {
+            val randomNum: Int = ThreadLocalRandom.current().nextInt(10000, 99999 + 1)
 
-        val message = SimpleMailMessage()
-        message.setFrom(fromEmail)
-        message.setTo(toEmail)
-        message.setText("Reset Code: $randomNum")
-        message.setSubject("Quora Clone - Password Reset")
+            val message = SimpleMailMessage()
+            message.setFrom(fromEmail)
+            message.setTo(toEmail)
+            message.setText("Reset Code: $randomNum")
+            message.setSubject("Quora Clone - Password Reset")
 
-        mailSender?.send(message)
+            try {
+                mailSender?.send(message)
+            } catch (e: MailException) {
+                System.err.println(e)
+            }
+        }
     }
 }
