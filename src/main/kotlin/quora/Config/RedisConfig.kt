@@ -19,9 +19,13 @@ class RedisConfig {
 
     @Bean
     fun jedisConnectionFactory(): JedisConnectionFactory {
-        return JedisConnectionFactory(RedisStandaloneConfiguration(
+        val config = RedisStandaloneConfiguration(
             env?.getProperty("spring.redis.host") ?: "localhost",
-            env?.getProperty("spring.redis.port")?.toInt() ?: 6379))
+            env?.getProperty("spring.redis.port")?.toInt() ?: 6379)
+
+        config.setPassword(env?.getProperty("spring.redis.password") ?: "123")
+
+        return JedisConnectionFactory(config)
     }
 
     @Bean
