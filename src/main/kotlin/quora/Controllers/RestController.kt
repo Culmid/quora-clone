@@ -92,7 +92,7 @@ class RestController {
         }
 
         val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
-        val secretKey = env?.getProperty("secret-key") ?: "12345789"
+        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
 
         return try {
@@ -125,7 +125,7 @@ class RestController {
     }
 
     private fun generateJWT(id: Int): String {
-        val secretKey = env?.getProperty("secret-key") ?: "12345789"
+        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
 
         return Jwts.builder()
@@ -133,7 +133,7 @@ class RestController {
                    .setSubject("userAuth")
                    .setId("$id")
                    .setIssuedAt(Date.from(Instant.now())) // Current Time
-                   .setExpiration(Date.from(Instant.now().plusSeconds(env?.get("expire-period")?.toLong() ?: 86400L))) // One Day Later
+                   .setExpiration(Date.from(Instant.now().plusSeconds(env?.get("jwt-expire-period")?.toLong() ?: 86400L))) // One Day Later
                    .signWith(key)
                    .compact()
     }
