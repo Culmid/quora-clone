@@ -187,6 +187,6 @@ POST /auth/password-reset
 ```json
 {
   "success": true,
-  "message": "5 Digit Recovery Key will be sent to: culmid@gmail.com"
+  "message": "5 Digit Recovery Key will be sent to: heartbreakhero@email.com"
 }
 ```
