@@ -141,7 +141,6 @@ class RestController {
         } else {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Email and recoveryKey Pair Invalid"))
         }
-
     }
 
     private fun generateJWT(id: Int): String {

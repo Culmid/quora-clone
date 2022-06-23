@@ -46,7 +46,6 @@ class UserService {
 
     fun updatePassword(userId: Int, passwordRequest: PasswordChangeDTO): Boolean {
         val potentialUser = userRepository?.findById(userId)?.get()
-
         return if (potentialUser != null && BCryptPasswordEncoder().matches(passwordRequest.currentPassword, potentialUser.password)) {
                     try {
                         potentialUser.password = passwordRequest.newPassword
@@ -82,6 +81,18 @@ class UserService {
     }
 
     fun updateResetPassword(passwordResetDetails: PasswordResetDTO): Boolean {
-        return true
+        val potentialUser = userRepository?.findByEmail(passwordResetDetails.email)
+        if (potentialUser != null) {
+            val redisEntity = redisRepo?.findById("password-reset-token-${potentialUser.id}")?.get() // Fix .get()
+
+            if (redisEntity?.value?.toInt() == passwordResetDetails.recoveryKey) {
+                // Update Password
+                potentialUser.password = passwordResetDetails.newPassword
+                userRepository?.save(potentialUser)
+                return true
+            }
+        }
+
+        return false
     }
 }
