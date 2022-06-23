@@ -8,6 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import quora.DTOs.LoginDetailsDTO
 import quora.DTOs.PasswordChangeDTO
+import quora.DTOs.PasswordResetDTO
 import quora.Entities.User
 import quora.Entities.RedisEntity
 import quora.Repositories.RedisRepo
@@ -78,5 +79,9 @@ class UserService {
                 System.err.println(e)
             }
         }
+    }
+
+    fun updateResetPassword(passwordResetDetails: PasswordResetDTO): Boolean {
+        return true
     }
 }

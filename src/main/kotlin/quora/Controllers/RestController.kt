@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
 import quora.DTOs.LoginDetailsDTO
 import quora.DTOs.PasswordChangeDTO
+import quora.DTOs.PasswordResetDTO
 import quora.Messaging.Message
 import quora.Entities.User
 import quora.Services.UserService
@@ -122,6 +123,25 @@ class RestController {
         userService?.constructAndSendPasswordRecovery(env?.get("spring.mail.username") ?: "example@gmail.com", toEmail)
 
         return ResponseEntity.status(HttpStatus.OK).body(Message(true, "5 Digit Recovery Key will be sent to: $toEmail"))
+    }
+
+
+    @PostMapping("/auth/password-reset/confirm")
+    fun forgotPasswordConfirm(@Valid @RequestBody passwordResetDetails: PasswordResetDTO, bindingResult: BindingResult): ResponseEntity<Message> {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Invalid Password-Reset Confirmation Request"))
+        }
+
+        if (passwordResetDetails.newPassword.length < 8) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "NewPassword Invalid"))
+        }
+
+        return if (userService?.updateResetPassword(passwordResetDetails) == true) {
+            ResponseEntity.status(HttpStatus.OK).body(Message(true, "Password Successfully Reset"))
+        } else {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Email and recoveryKey Pair Invalid"))
+        }
+
     }
 
     private fun generateJWT(id: Int): String {
