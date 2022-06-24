@@ -83,9 +83,9 @@ class UserService {
     fun updateResetPassword(passwordResetDetails: PasswordResetDTO): Boolean {
         val potentialUser = userRepository?.findByEmail(passwordResetDetails.email)
         if (potentialUser != null) {
-            val redisEntity = redisRepo?.findById("password-reset-token-${potentialUser.id}")?.get() // Fix .get()
+            val redisEntity = redisRepo?.findById("password-reset-token-${potentialUser.id}") // Fix .get()
 
-            if (redisEntity?.value?.toInt() == passwordResetDetails.recoveryKey) {
+            if (redisEntity?.isPresent == true && redisEntity.get().value?.toInt() == passwordResetDetails.recoveryKey) {
                 // Update Password
                 potentialUser.password = passwordResetDetails.newPassword
                 userRepository?.save(potentialUser)
