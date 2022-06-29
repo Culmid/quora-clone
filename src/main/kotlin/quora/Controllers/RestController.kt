@@ -176,6 +176,9 @@ class RestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "UserId should be Integer Value"))
         }
 
+        if (userService?.userIdExists(userId) != true) { // Guard for userService being null
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Message(false, "Profile with Requested userId Not Found"))
+        }
 
         return ResponseEntity.status(HttpStatus.OK).body(Message(true, "follow"))
     }

@@ -27,6 +27,10 @@ class UserService {
     @Autowired
     private var redisRepo: RedisRepo? = null
 
+    fun userIdExists(id: Int): Boolean {
+        return userRepository?.findById(id)?.isEmpty == false
+    }
+
     fun emailExists(email: String): Boolean {
         return userRepository?.findByEmail(email) != null
     }
