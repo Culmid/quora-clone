@@ -92,24 +92,19 @@ class RestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "CurrentPassword and NewPassword Fields Required"))
         }
 
-        val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
-        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
-        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
+        val jws: Jws<Claims>? = parseJWT(auth)
 
-        return try {
-            val jws: Jws<Claims> = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(bearerToken);
+        return if (jws == null) {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
+        } else {
             val response = userService?.updatePassword(jws.body.id.toInt(), passwordRequest) ?: false
 
             if (response) {
                 ResponseEntity.status(HttpStatus.OK).body(Message(true, "Password Updated"))
             } else {
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Provided User Credentials/Requested Password - Invalid"))
+                ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Message(false, "Provided User Credentials/Requested Password - Invalid"))
             }
-        } catch (e: JwtException) {
-            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
         }
     }
 
@@ -149,16 +144,7 @@ class RestController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
         }
 
-        val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
-        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
-        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
-
-        try { // Extract to helper func
-            val jws: Jws<Claims> = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(bearerToken);
-        } catch (e: JwtException) {
+        if (parseJWT(auth) == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
         }
 
@@ -183,5 +169,20 @@ class RestController {
                    .setExpiration(Date.from(Instant.now().plusSeconds(env?.get("jwt-expire-period")?.toLong() ?: 86400L))) // One Day Later
                    .signWith(key)
                    .compact()
+    }
+
+    private fun parseJWT(authHeader: String): Jws<Claims>? {
+        val bearerToken = authHeader.split(" ")[1] // Assume Correct Format -> Bearer <Token>
+        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
+        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
+
+        return  try {
+                    Jwts.parserBuilder()
+                        .setSigningKey(key)
+                        .build()
+                        .parseClaimsJws(bearerToken);
+                } catch (e: JwtException) {
+                    null
+                }
     }
 }
