@@ -149,7 +149,26 @@ class RestController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
         }
 
-        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "$email $auth"))
+        val bearerToken = auth.split(" ")[1] // Assume Correct Format -> Bearer <Token>
+        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
+        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
+
+        try { // Extract to helper func
+            val jws: Jws<Claims> = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(bearerToken);
+        } catch (e: JwtException) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
+        }
+
+        val potentialUser = userService?.getUserByEmail(email)
+
+        return if (potentialUser == null) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(Message(false, "Profile with Requested Email Not Found"))
+        } else {
+            ResponseEntity.status(HttpStatus.OK).body(Message(true, "Profile Details for $email", mapOf("id" to potentialUser.id.toString(), "firstName" to potentialUser.firstName, "lastName" to potentialUser.lastName)))
+        }
     }
 
     private fun generateJWT(id: Int): String {
