@@ -170,7 +170,12 @@ class RestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "UserId Required"))
         }
 
-        val userId = body["userId"]?.toInt() ?: -1 // Dodgy
+        val userId = try {
+            body["userId"]?.toInt() ?: -1
+        } catch (e: java.lang.NumberFormatException) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "UserId should be Integer Value"))
+        }
+
 
         return ResponseEntity.status(HttpStatus.OK).body(Message(true, "follow"))
     }
