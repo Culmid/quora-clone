@@ -36,29 +36,27 @@ class User {
         password = BCryptPasswordEncoder().encode(password)
     }
 
-    @OneToMany(
-        mappedBy = "followedUser",
-        cascade = [CascadeType.ALL],
-        orphanRemoval = true
-    )
-    private val followers: MutableSet<FollowRelationship> = mutableSetOf()
-
-    @OneToMany(
-        mappedBy = "follower",
-        cascade = [CascadeType.ALL],
-        orphanRemoval = true
-    )
-    private val following: MutableSet<FollowRelationship> = mutableSetOf()
-
-    fun addFollower(followRelationship: FollowRelationship) {
-        followers.add(followRelationship)
-        followRelationship.followedUser = this
-        println(followers)
-    }
-
-    fun addFollowing(followRelationship: FollowRelationship) {
-        following.add(followRelationship)
-        followRelationship.follower = this
-        println(following)
-    }
+//    @OneToMany(
+//        mappedBy = "followedUser",
+//        cascade = [CascadeType.ALL],
+//        orphanRemoval = true
+//    )
+//    private val followers: MutableSet<FollowRelationship> = mutableSetOf()
+//
+//    @OneToMany(
+//        mappedBy = "follower",
+//        cascade = [CascadeType.ALL],
+//        orphanRemoval = true
+//    )
+//    private val following: MutableSet<FollowRelationship> = mutableSetOf()
+//
+//    fun addFollower(followRelationship: FollowRelationship) {
+//        followers.add(followRelationship)
+//        followRelationship.followedUser = this
+//    }
+//
+//    fun addFollowing(followRelationship: FollowRelationship) {
+//        following.add(followRelationship)
+//        followRelationship.follower = this
+//    }
 }

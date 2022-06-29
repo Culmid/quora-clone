@@ -12,6 +12,7 @@ import quora.DTOs.PasswordResetDTO
 import quora.Entities.FollowRelationship
 import quora.Entities.User
 import quora.Entities.RedisEntity
+import quora.Repositories.FollowRepository
 import quora.Repositories.RedisRepo
 import quora.Repositories.UserRepository
 import java.util.concurrent.ThreadLocalRandom
@@ -21,6 +22,9 @@ class UserService {
 
     @Autowired
     private var userRepository: UserRepository? = null
+
+    @Autowired
+    private var followRepository: FollowRepository? = null
 
     @Autowired
     private var mailSender: JavaMailSender? = null
@@ -112,21 +116,14 @@ class UserService {
         val followRelationship = FollowRelationship()
 
         if (followedUserId != followerId) {
-            // Add followRelationship to followedUser
             val followedUser = userRepository?.findById(followedUserId)?.get()
-            followedUser?.addFollower(followRelationship)
-
-            // Add followRelationship to follower
             val follower = userRepository?.findById(followerId)?.get()
-            follower?.addFollowing(followRelationship)
+
+            followRelationship.followedUser = followedUser
+            followRelationship.follower = follower
 
             // Persist Changes
-            if (follower != null) {
-                userRepository?.save(follower)
-            }
-            if (followedUser != null) {
-                userRepository?.save(followedUser)
-            }
+            followRepository?.save(followRelationship)
         }
         // Fail Silently like a Chop :P
     }
