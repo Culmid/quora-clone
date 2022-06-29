@@ -162,9 +162,8 @@ class RestController {
         if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
         }
-        if (parseJWT(auth) == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
-        }
+        val jwt = parseJWT(auth)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
 
         if (!body.containsKey("userId") || body["userId"] == "") {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "UserId Required"))
@@ -179,6 +178,9 @@ class RestController {
         if (userService?.userIdExists(userId) != true) { // Guard for userService being null
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Message(false, "Profile with Requested userId Not Found"))
         }
+
+        // Do follow things
+        userService.addFollowerRelationship(userId, jwt.body.id.toInt())
 
         return ResponseEntity.status(HttpStatus.OK).body(Message(true, "follow"))
     }

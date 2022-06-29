@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import quora.DTOs.LoginDetailsDTO
 import quora.DTOs.PasswordChangeDTO
 import quora.DTOs.PasswordResetDTO
+import quora.Entities.FollowRelationship
 import quora.Entities.User
 import quora.Entities.RedisEntity
 import quora.Repositories.RedisRepo
@@ -102,5 +103,31 @@ class UserService {
 
     fun getUserByEmail(email: String): User? {
         return userRepository?.findByEmail(email)
+    }
+
+    fun addFollowerRelationship(followedUserId: Int, followerId: Int) {
+        println("followedUserId: $followedUserId")
+        println("followerId: $followerId")
+
+        val followRelationship = FollowRelationship()
+
+        if (followedUserId != followerId) {
+            // Add followRelationship to followedUser
+            val followedUser = userRepository?.findById(followedUserId)?.get()
+            followedUser?.addFollower(followRelationship)
+
+            // Add followRelationship to follower
+            val follower = userRepository?.findById(followerId)?.get()
+            follower?.addFollowing(followRelationship)
+
+            // Persist Changes
+            if (follower != null) {
+                userRepository?.save(follower)
+            }
+            if (followedUser != null) {
+                userRepository?.save(followedUser)
+            }
+        }
+        // Fail Silently like a Chop :P
     }
 }
