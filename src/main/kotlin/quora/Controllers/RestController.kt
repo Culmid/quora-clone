@@ -143,6 +143,15 @@ class RestController {
         }
     }
 
+    @GetMapping("/search/accounts")
+    fun getProfile(@RequestHeader("authorization", required = false) auth: String?, @RequestParam(name = "email") email: String): ResponseEntity<Message> {
+        if (auth == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "$email $auth"))
+    }
+
     private fun generateJWT(id: Int): String {
         val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
