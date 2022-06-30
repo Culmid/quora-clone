@@ -179,10 +179,11 @@ class RestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Message(false, "Profile with Requested userId Not Found"))
         }
 
-        // Do follow things
-        userService.addFollowerRelationship(userId, jwt.body.id.toInt())
-
-        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "follow"))
+        return if (userService.addFollowerRelationship(userId, jwt.body.id.toInt())) {
+            ResponseEntity.status(HttpStatus.OK).body(Message(true, "Follow (${jwt.body.id} -> $userId) Successful"))
+        } else {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Invalid Follow Request"))
+        }
     }
 
     private fun generateJWT(id: Int): String {

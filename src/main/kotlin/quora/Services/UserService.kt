@@ -109,7 +109,7 @@ class UserService {
         return userRepository?.findByEmail(email)
     }
 
-    fun addFollowerRelationship(followedUserId: Int, followerId: Int) {
+    fun addFollowerRelationship(followedUserId: Int, followerId: Int): Boolean {
         println("followedUserId: $followedUserId")
         println("followerId: $followerId")
 
@@ -123,8 +123,13 @@ class UserService {
             followRelationship.follower = follower
 
             // Persist Changes
-            followRepository?.save(followRelationship)
+            val existingRelationship = followRepository?.findByFollowedUserAndFollower(followedUser, follower)
+            if (existingRelationship == null) {
+                followRepository?.save(followRelationship)
+                return true
+            }
         }
-        // Fail Silently like a Chop :P
+
+        return false
     }
 }
