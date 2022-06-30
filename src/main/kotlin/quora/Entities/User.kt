@@ -47,4 +47,8 @@ class User {
         questions.add(question)
         question.author = this
     }
+
+    fun getQuestions(): Set<Question> {
+        return questions
+    }
 }

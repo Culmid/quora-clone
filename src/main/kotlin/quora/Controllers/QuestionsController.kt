@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
 import quora.DTOs.QuestionDTO
 import quora.Messaging.Message
+import quora.Messaging.QuestionsMessage
 import quora.Services.JwtService
 import quora.Services.UserService
 import javax.validation.Valid
@@ -44,8 +45,15 @@ class QuestionsController {
         }
     }
 
-//    @GetMapping
-//    fun getQuestions(): ResponseEntity<Message> {
-//
-//    }
+    @GetMapping
+    fun getQuestions(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<QuestionsMessage> {
+        // Handle Auth
+        if (auth == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(QuestionsMessage(false, "Authentication (Bearer) Token Missing from Header"))
+        }
+        val jwt = jwtService?.parseJWT(auth)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(QuestionsMessage(false, "Auth Token Invalid/Expired"))
+
+        return ResponseEntity.status(HttpStatus.OK).body(QuestionsMessage(true, "Successfully Retrieved Questions", mapOf("questions" to (userService?.getQuestions(jwt.body.id.toInt()) ?: emptyList()))))
+    }
 }

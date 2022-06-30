@@ -162,4 +162,8 @@ class UserService {
 
         return true
     }
+
+    fun getQuestions(userId: Int): List<QuestionOutputDTO> {
+        return userRepository?.findById(userId)?.get()?.getQuestions()?.map { QuestionOutputDTO(it.id, it.title, it.description) } ?: emptyList()
+    }
 }
