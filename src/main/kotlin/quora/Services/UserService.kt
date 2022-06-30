@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import quora.DTOs.LoginDetailsDTO
 import quora.DTOs.PasswordChangeDTO
 import quora.DTOs.PasswordResetDTO
+import quora.DTOs.ProfileDTO
 import quora.Entities.FollowRelationship
 import quora.Entities.User
 import quora.Entities.RedisEntity
@@ -131,5 +132,14 @@ class UserService {
         }
 
         return false
+    }
+
+    fun getFollowingList(userId: Int): List<ProfileDTO> {
+        val follower = userRepository?.findById(userId)?.get()
+
+        return followRepository?.findAllByFollower(follower)?.map {// Questionable null checks ;)
+            val followedUser = it.followedUser
+            ProfileDTO(followedUser?.id?.toInt() ?: -1, followedUser?.firstName ?: "", followedUser?.lastName ?: "")
+        } ?: emptyList()
     }
 }

@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.RestController
 import quora.DTOs.LoginDetailsDTO
 import quora.DTOs.PasswordChangeDTO
 import quora.DTOs.PasswordResetDTO
+import quora.DTOs.ProfileDTO
 import quora.Messaging.Message
 import quora.Entities.User
+import quora.Messaging.ProfileMessage
 import quora.Services.UserService
 import java.time.Instant
 import java.util.*
@@ -188,14 +190,14 @@ class RestController {
 
 
     @GetMapping("/accounts/following")
-    fun getFollowing(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<Message> {
+    fun getFollowing(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<ProfileMessage> {
         if (auth == null) { // Extract Auth
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Authentication (Bearer) Token Missing from Header"))
         }
         val jwt = parseJWT(auth)
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Auth Token Invalid/Expired"))
 
-        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "Following"))
+        return ResponseEntity.status(HttpStatus.OK).body(ProfileMessage(true, "Successfully Retrieved Followed Accounts", mapOf("following" to (userService?.getFollowingList(jwt.body.id.toInt()) ?: emptyList()))))
     }
 
     private fun generateJWT(id: Int): String {
