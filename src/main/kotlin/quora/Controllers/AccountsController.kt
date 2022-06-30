@@ -53,7 +53,7 @@ class AccountsController {
 
     @GetMapping("/following")
     fun getFollowing(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<ProfileMessage> {
-        if (auth == null) { // Extract Auth
+        if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Authentication (Bearer) Token Missing from Header"))
         }
         val jwt = jwtService?.parseJWT(auth)
@@ -64,7 +64,7 @@ class AccountsController {
 
     @GetMapping("/followers")
     fun getFollowers(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<ProfileMessage> {
-        if (auth == null) { // Extract Auth
+        if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Authentication (Bearer) Token Missing from Header"))
         }
         val jwt = jwtService?.parseJWT(auth)
