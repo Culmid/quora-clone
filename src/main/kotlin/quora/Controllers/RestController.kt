@@ -186,6 +186,18 @@ class RestController {
         }
     }
 
+
+    @GetMapping("/accounts/following")
+    fun getFollowing(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<Message> {
+        if (auth == null) { // Extract Auth
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
+        }
+        val jwt = parseJWT(auth)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
+
+        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "Following"))
+    }
+
     private fun generateJWT(id: Int): String {
         val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
