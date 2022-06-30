@@ -23,6 +23,7 @@ import quora.DTOs.ProfileDTO
 import quora.Messaging.Message
 import quora.Entities.User
 import quora.Messaging.ProfileMessage
+import quora.Services.JwtService
 import quora.Services.UserService
 import java.time.Instant
 import java.util.*
@@ -34,6 +35,9 @@ import javax.validation.Valid
 class RestController {
     @Autowired
     private val userService: UserService? = null
+
+    @Autowired
+    private val jwtService: JwtService? = null
 
     @Autowired
     private val env: Environment? = null
@@ -65,7 +69,7 @@ class RestController {
 
         val response = userService?.registerUser(user)
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(Message(true, "User Registered", mapOf("Jwt-Token" to generateJWT(response?.id ?: -1))))
+            .body(Message(true, "User Registered", mapOf("Jwt-Token" to (jwtService?.generateJWT(response?.id ?: -1) ?: "123"))))
     }
 
     @PostMapping("/auth/login")
@@ -80,7 +84,7 @@ class RestController {
         } else {
             ResponseEntity
             .status(HttpStatus.OK)
-            .body(Message(true, "User Logged In", mapOf("Jwt-Token" to generateJWT(user.id))))
+            .body(Message(true, "User Logged In", mapOf("Jwt-Token" to (jwtService?.generateJWT(user.id) ?: "123"))))
         }
     }
 
@@ -94,7 +98,7 @@ class RestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "CurrentPassword and NewPassword Fields Required"))
         }
 
-        val jws: Jws<Claims>? = parseJWT(auth)
+        val jws: Jws<Claims>? = jwtService?.parseJWT(auth)
 
         return if (jws == null) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
@@ -146,7 +150,7 @@ class RestController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
         }
 
-        if (parseJWT(auth) == null) {
+        if (jwtService?.parseJWT(auth) == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
         }
 
@@ -164,7 +168,7 @@ class RestController {
         if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Authentication (Bearer) Token Missing from Header"))
         }
-        val jwt = parseJWT(auth)
+        val jwt = jwtService?.parseJWT(auth)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Message(false, "Auth Token Invalid/Expired"))
 
         if (!body.containsKey("userId") || body["userId"] == "") {
@@ -194,7 +198,7 @@ class RestController {
         if (auth == null) { // Extract Auth
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Authentication (Bearer) Token Missing from Header"))
         }
-        val jwt = parseJWT(auth)
+        val jwt = jwtService?.parseJWT(auth)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Auth Token Invalid/Expired"))
 
         return ResponseEntity.status(HttpStatus.OK).body(ProfileMessage(true, "Successfully Retrieved Followed Accounts", mapOf("following" to (userService?.getFollowingList(jwt.body.id.toInt()) ?: emptyList()))))
@@ -205,38 +209,9 @@ class RestController {
         if (auth == null) { // Extract Auth
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Authentication (Bearer) Token Missing from Header"))
         }
-        val jwt = parseJWT(auth)
+        val jwt = jwtService?.parseJWT(auth)
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Auth Token Invalid/Expired"))
 
         return ResponseEntity.status(HttpStatus.OK).body(ProfileMessage(true, "Successfully Retrieved Following Accounts", mapOf("following" to (userService?.getFollowerList(jwt.body.id.toInt()) ?: emptyList()))))
-    }
-
-    private fun generateJWT(id: Int): String {
-        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
-        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
-
-        return Jwts.builder()
-                   .setIssuer("quora")
-                   .setSubject("userAuth")
-                   .setId("$id")
-                   .setIssuedAt(Date.from(Instant.now())) // Current Time
-                   .setExpiration(Date.from(Instant.now().plusSeconds(env?.get("jwt-expire-period")?.toLong() ?: 86400L))) // One Day Later
-                   .signWith(key)
-                   .compact()
-    }
-
-    private fun parseJWT(authHeader: String): Jws<Claims>? {
-        val bearerToken = authHeader.split(" ")[1] // Assume Correct Format -> Bearer <Token>
-        val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
-        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
-
-        return  try {
-                    Jwts.parserBuilder()
-                        .setSigningKey(key)
-                        .build()
-                        .parseClaimsJws(bearerToken);
-                } catch (e: JwtException) {
-                    null
-                }
     }
 }
