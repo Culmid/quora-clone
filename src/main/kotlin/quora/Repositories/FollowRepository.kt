@@ -6,6 +6,6 @@ import quora.Entities.User
 
 interface FollowRepository: CrudRepository<FollowRelationship, Int> {
     fun findByFollowedUserAndFollower(followedUser: User?, follower: User?): FollowRelationship?
-
     fun findAllByFollower(follower: User?): List<FollowRelationship>
+    fun findAllByFollowedUser(followedUser: User?): List<FollowRelationship>
 }

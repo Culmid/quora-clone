@@ -139,7 +139,16 @@ class UserService {
 
         return followRepository?.findAllByFollower(follower)?.map {// Questionable null checks ;)
             val followedUser = it.followedUser
-            ProfileDTO(followedUser?.id?.toInt() ?: -1, followedUser?.firstName ?: "", followedUser?.lastName ?: "")
+            ProfileDTO(followedUser?.id ?: -1, followedUser?.firstName ?: "", followedUser?.lastName ?: "")
+        } ?: emptyList()
+    }
+
+    fun getFollowerList(userId: Int): List<ProfileDTO> {
+        val followedUser = userRepository?.findById(userId)?.get()
+
+        return followRepository?.findAllByFollowedUser(followedUser)?.map {// Questionable null checks ;)
+            val follower = it.follower
+            ProfileDTO(follower?.id ?: -1, follower?.firstName ?: "", follower?.lastName ?: "")
         } ?: emptyList()
     }
 }

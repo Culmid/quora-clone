@@ -200,6 +200,17 @@ class RestController {
         return ResponseEntity.status(HttpStatus.OK).body(ProfileMessage(true, "Successfully Retrieved Followed Accounts", mapOf("following" to (userService?.getFollowingList(jwt.body.id.toInt()) ?: emptyList()))))
     }
 
+    @GetMapping("/accounts/followers")
+    fun getFollowers(@RequestHeader("authorization", required = false) auth: String?): ResponseEntity<ProfileMessage> {
+        if (auth == null) { // Extract Auth
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Authentication (Bearer) Token Missing from Header"))
+        }
+        val jwt = parseJWT(auth)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ProfileMessage(false, "Auth Token Invalid/Expired"))
+
+        return ResponseEntity.status(HttpStatus.OK).body(ProfileMessage(true, "Successfully Retrieved Following Accounts", mapOf("following" to (userService?.getFollowerList(jwt.body.id.toInt()) ?: emptyList()))))
+    }
+
     private fun generateJWT(id: Int): String {
         val secretKey = env?.getProperty("jwt-secret-key") ?: "12345789"
         val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
