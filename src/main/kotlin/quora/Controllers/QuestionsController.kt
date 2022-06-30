@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RestController
 import quora.DTOs.QuestionDTO
 import quora.Messaging.Message
-import quora.Messaging.ProfileMessage
 import quora.Services.JwtService
 import quora.Services.UserService
 import javax.validation.Valid
@@ -38,9 +37,11 @@ class QuestionsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Title and Description Fields Required"))
         }
 
-        // Do posting Kak
-
-        return ResponseEntity.status(HttpStatus.OK).body(Message(true, "Question Posted Successfully: ${question.title}"))
+        return  if (userService?.postQuestion(jwt.body.id.toInt(), question) == true) {
+            ResponseEntity.status(HttpStatus.OK).body(Message(true, "Question Posted Successfully: ${question.title}"))
+        } else {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Message(false, "Unsuccessful in Adding Question"))
+        }
     }
 
 //    @GetMapping

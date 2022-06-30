@@ -6,11 +6,9 @@ import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
-import quora.DTOs.LoginDetailsDTO
-import quora.DTOs.PasswordChangeDTO
-import quora.DTOs.PasswordResetDTO
-import quora.DTOs.ProfileDTO
+import quora.DTOs.*
 import quora.Entities.FollowRelationship
+import quora.Entities.Question
 import quora.Entities.User
 import quora.Entities.RedisEntity
 import quora.Repositories.FollowRepository
@@ -150,5 +148,18 @@ class UserService {
             val follower = it.follower
             ProfileDTO(follower?.id ?: -1, follower?.firstName ?: "", follower?.lastName ?: "")
         } ?: emptyList()
+    }
+
+    fun postQuestion(userId: Int, questionDTO: QuestionDTO): Boolean {
+        val user = userRepository?.findById(userId)?.get() ?: return false
+
+        val question = Question()
+        question.title = questionDTO.title
+        question.description = questionDTO.description
+        user.addQuestion(question)
+
+        userRepository?.save(user)
+
+        return true
     }
 }
